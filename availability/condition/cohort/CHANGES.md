@@ -4,6 +4,17 @@ moodle-availability_cohort
 Changes
 -------
 
+### v3.10-r1
+
+* 2021-01-09 - Fix Behat test after upstream change in cohort management (see MDL-67278 for details)
+* 2021-01-09 - PHPUnit: Remove deprecated assertContains() uses on strings for Moodle 3.10 (see MDL-67673 for details)
+* 2021-01-09 - Fix PHPUnit function declaration for Moodle 3.10.
+* 2021-01-09 - Prepare compatibility for Moodle 3.10.
+* 2021-01-06 - Change in Moodle release support:
+               For the time being, this plugin is maintained for the most recent LTS release of Moodle as well as the most recent major release of Moodle.
+               Bugfixes are backported to the LTS release. However, new features and improvements are not necessarily backported to the LTS release.
+* 2021-01-06 - Improvement: Declare which major stable version of Moodle this plugin supports (see MDL-59562 for details).
+
 ### v3.9-r1
 
 * 2020-07-16 - Prepare compatibility for Moodle 3.9.
