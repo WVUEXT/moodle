@@ -34,7 +34,7 @@ require_once($CFG->dirroot.'/mod/zoom/locallib.php');
  * @copyright  2019 UC Regents
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class webservice_test extends advanced_testcase {
+class mod_zoom_webservice_test extends advanced_testcase {
 
     /**
      * Setup before every test.
@@ -42,8 +42,8 @@ class webservice_test extends advanced_testcase {
     public function setUp(): void {
         $this->resetAfterTest();
         // Set fake values so we can test methods in class.
-        set_config('apikey', 'test', 'mod_zoom');
-        set_config('apisecret', 'test', 'mod_zoom');
+        set_config('apikey', 'test', 'zoom');
+        set_config('apisecret', 'test', 'zoom');
 
         $this->notfoundmockcurl = new class {
             // @codingStandardsIgnoreStart
