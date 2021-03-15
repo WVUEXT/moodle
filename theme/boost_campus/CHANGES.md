@@ -4,6 +4,12 @@ moodle-theme_boost_campus
 Changes
 -------
 
+### v3.10-r4
+
+* 2021-03-13 - Bugfix: Option to output the information banner without any particular Bootstrap color was broken on the login page.
+* 2021-03-13 - Make Behat tests functional again on Github Actions.
+* 2021-03-13 - Bugfix: Unrestricted self enrolment hint did not respect existing but disabled enrolment instances.
+
 ### v3.10-r3
 
 * 2021-02-05 - Improvement: Add missing catch branch in Back-to-top button JS
