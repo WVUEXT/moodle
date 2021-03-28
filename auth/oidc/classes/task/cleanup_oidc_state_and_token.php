@@ -15,30 +15,38 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
+ * A scheduled task to clean up oidc state and invalid token.
+ *
  * @package auth_oidc
- * @author James McQuillan <james.mcquillan@remote-learner.net>
+ * @author Lai Wei <lai.wei@enovation.ie>
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @copyright (C) 2014 onwards Microsoft, Inc. (http://microsoft.com/)
+ * @copyright (C) 2021 onwards Microsoft, Inc. (http://microsoft.com/)
  */
 
-namespace auth_oidc;
+namespace auth_oidc\task;
 
-require_once($CFG->dirroot.'/lib/filelib.php');
+defined('MOODLE_INTERNAL') || die();
 
-/**
- * Handles events.
- */
-class observers {
+use core\task\scheduled_task;
+
+class cleanup_oidc_state_and_token extends scheduled_task {
     /**
-     * Handle user_deleted event - clean up calendar subscriptions.
-     *
-     * @param \core\event\user_deleted $event The triggered event.
-     * @return bool Success/Failure.
+     * Get a descriptive name for the task.
      */
-    public static function handle_user_deleted(\core\event\user_deleted $event) {
+    public function get_name() {
+        return get_string('task_cleanup_oidc_state_and_token', 'auth_oidc');
+    }
+
+    /**
+     * Clean up oidc state and invalid oidc token.
+     */
+    public function execute() {
         global $DB;
-        $userid = $event->objectid;
-        $DB->delete_records('auth_oidc_token', ['userid' => $userid]);
-        return true;
+
+        // Clean up oidc state.
+        $DB->delete_records_select('auth_oidc_state', 'timecreated < ?', strtotime('-5 min'));
+
+        // Clean up invalid oidc token.
+        $DB->delete_records('auth_oidc_token', ['userid' => 0]);
     }
 }
