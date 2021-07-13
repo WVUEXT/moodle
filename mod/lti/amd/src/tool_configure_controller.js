@@ -19,8 +19,6 @@
  * In addition, it can batch multiple requests and return multiple responses.
  *
  * @module     mod_lti/tool_configure_controller
- * @class      tool_configure_controller
- * @package    mod_lti
  * @copyright  2015 Ryan Wyllie <ryan@moodle.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @since      3.1
@@ -319,7 +317,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/templates', 'mod_lti/e
      * @private
      */
     var addLTIAdvTool = function() {
-        var url = $.trim(getToolURL());
+        var url = getToolURL().trim();
 
         if (url) {
             $(SELECTORS.TOOL_URL).val('');
@@ -338,7 +336,7 @@ define(['jquery', 'core/ajax', 'core/notification', 'core/templates', 'mod_lti/e
      * @return {Promise} jQuery Deferred object
      */
     var addLTILegacyTool = function() {
-        var url = $.trim(getToolURL());
+        var url = getToolURL().trim();
 
         if (url === "") {
             return $.Deferred().resolve();
