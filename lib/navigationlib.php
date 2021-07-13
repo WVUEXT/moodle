@@ -3670,7 +3670,8 @@ class navbar extends navigation_node {
         }
 
         // Don't show the 'course' node if enrolled in this course.
-        if (!is_enrolled(context_course::instance($this->page->course->id, null, '', true))) {
+        $coursecontext = context_course::instance($this->page->course->id);
+        if (!is_enrolled($coursecontext, null, '', true)) {
             $courses = $this->page->navigation->get('courses');
             if (!$courses) {
                 // Courses node may not be present.
@@ -4490,8 +4491,9 @@ class settings_navigation extends navigation_node {
 
         // View course reports.
         if ($adminoptions->reports) {
-            $reportnav = $coursenode->add(get_string('reports'), null, self::TYPE_CONTAINER, null, 'coursereports',
-                    new pix_icon('i/stats', ''));
+            $reportnav = $coursenode->add(get_string('reports'),
+                new moodle_url('/report/view.php', ['courseid' => $coursecontext->instanceid]),
+                self::TYPE_CONTAINER, null, 'coursereports', new pix_icon('i/stats', ''));
             $coursereports = core_component::get_plugin_list('coursereport');
             foreach ($coursereports as $report => $dir) {
                 $libfile = $CFG->dirroot.'/course/report/'.$report.'/lib.php';
@@ -5086,15 +5088,6 @@ class settings_navigation extends navigation_node {
             }
         }
 
-        // Add "Course preferences" link.
-        if (isloggedin() && !isguestuser($user)) {
-            if ($currentuser && has_capability('moodle/user:editownprofile', $systemcontext) ||
-                has_capability('moodle/user:editprofile', $usercontext)) {
-                $url = new moodle_url('/user/course.php', array('id' => $user->id, 'course' => $course->id));
-                $useraccount->add(get_string('coursepreferences'), $url, self::TYPE_SETTING, null, 'coursepreferences');
-            }
-        }
-
         // Add "Calendar preferences" link.
         if (isloggedin() && !isguestuser($user)) {
             if ($currentuser && has_capability('moodle/user:editownprofile', $systemcontext) ||
@@ -5104,12 +5097,22 @@ class settings_navigation extends navigation_node {
             }
         }
 
+        // Add "Content bank preferences" link.
+        if (isloggedin() && !isguestuser($user)) {
+            if ($currentuser && has_capability('moodle/user:editownprofile', $systemcontext) ||
+                has_capability('moodle/user:editprofile', $usercontext)) {
+                $url = new moodle_url('/user/contentbank.php', ['id' => $user->id]);
+                $useraccount->add(get_string('contentbankpreferences', 'core_contentbank'), $url, self::TYPE_SETTING,
+                        null, 'contentbankpreferences');
+            }
+        }
+
         // View the roles settings.
-        if (has_any_capability(array('moodle/role:assign', 'moodle/role:safeoverride', 'moodle/role:override',
-                'moodle/role:manage'), $usercontext)) {
+        if (has_any_capability(['moodle/role:assign', 'moodle/role:safeoverride', 'moodle/role:override',
+                'moodle/role:manage'], $usercontext)) {
             $roles = $usersetting->add(get_string('roles'), null, self::TYPE_SETTING);
 
-            $url = new moodle_url('/admin/roles/usersroles.php', array('userid'=>$user->id, 'courseid'=>$course->id));
+            $url = new moodle_url('/admin/roles/usersroles.php', ['userid' => $user->id, 'courseid' => $course->id]);
             $roles->add(get_string('thisusersroles', 'role'), $url, self::TYPE_SETTING);
 
             $assignableroles = get_assignable_roles($usercontext, ROLENAME_BOTH);

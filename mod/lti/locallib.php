@@ -55,6 +55,7 @@ use moodle\mod\lti as lti;
 use Firebase\JWT\JWT;
 use Firebase\JWT\JWK;
 use mod_lti\local\ltiopenid\jwks_helper;
+use mod_lti\local\ltiopenid\registration_helper;
 
 global $CFG;
 require_once($CFG->dirroot.'/mod/lti/OAuth.php');
@@ -2752,7 +2753,7 @@ function lti_prepare_type_for_save($type, $config) {
         $type->clientid = $config->lti_clientid;
     }
     if ((!empty($type->ltiversion) && $type->ltiversion === LTI_VERSION_1P3) && empty($type->clientid)) {
-        $type->clientid = random_string(15);
+        $type->clientid = registration_helper::get()->new_clientid();
     } else if (empty($type->clientid)) {
         $type->clientid = null;
     }
@@ -2821,6 +2822,14 @@ function lti_update_type($type, $config) {
                 $record->value = $value;
                 lti_update_config($record);
             }
+        }
+        if (isset($type->toolproxyid) && $type->ltiversion === LTI_VERSION_1P3) {
+            // We need to remove the tool proxy for this tool to function under 1.3.
+            $toolproxyid = $type->toolproxyid;
+            $DB->delete_records('lti_tool_settings', array('toolproxyid' => $toolproxyid));
+            $DB->delete_records('lti_tool_proxies', array('id' => $toolproxyid));
+            $type->toolproxyid = null;
+            $DB->update_record('lti_types', $type);
         }
         require_once($CFG->libdir.'/modinfolib.php');
         if ($clearcache) {
@@ -4384,7 +4393,7 @@ function lti_load_cartridge($url, $map, $propertiesmap = array()) {
 
     // TODO MDL-46023 Replace this code with a call to the new library.
     $origerrors = libxml_use_internal_errors(true);
-    $origentity = libxml_disable_entity_loader(true);
+    $origentity = lti_libxml_disable_entity_loader(true);
     libxml_clear_errors();
 
     $document = new DOMDocument();
@@ -4396,7 +4405,7 @@ function lti_load_cartridge($url, $map, $propertiesmap = array()) {
 
     libxml_clear_errors();
     libxml_use_internal_errors($origerrors);
-    libxml_disable_entity_loader($origentity);
+    lti_libxml_disable_entity_loader($origentity);
 
     if (count($errors) > 0) {
         $message = 'Failed to load cartridge.';
@@ -4481,3 +4490,20 @@ function lti_new_access_token($typeid, $scopes) {
 
 }
 
+
+/**
+ * Wrapper for function libxml_disable_entity_loader() deprecated in PHP 8
+ *
+ * Method was deprecated in PHP 8 and it shows deprecation message. However it is still
+ * required in the previous versions on PHP. While Moodle supports both PHP 7 and 8 we need to keep it.
+ * @see https://php.watch/versions/8.0/libxml_disable_entity_loader-deprecation
+ *
+ * @param bool $value
+ * @return bool
+ */
+function lti_libxml_disable_entity_loader(bool $value): bool {
+    if (PHP_VERSION_ID < 80000) {
+        return (bool)libxml_disable_entity_loader($value);
+    }
+    return true;
+}
