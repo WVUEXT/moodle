@@ -21,6 +21,8 @@
  * @copyright (C) 2014 onwards Microsoft, Inc. (http://microsoft.com/)
  */
 
+defined('MOODLE_INTERNAL') || die();
+
 /**
  * Update plugin.
  *
@@ -180,25 +182,85 @@ function xmldb_auth_oidc_upgrade($oldversion) {
         upgrade_plugin_savepoint($result, '2018051700.01', 'auth', 'oidc');
     }
 
-    if ($result && $oldversion < 2020071503) {
-        $localo365singlesignoffsetting = get_config('local_o365', 'single_sign_off');
-        if ($localo365singlesignoffsetting) {
-            set_config('single_sign_off', true, 'auth_oidc');
+    if ($result && $oldversion < 2020020301) {
+        $oldgraphtokens = $DB->get_records('auth_oidc_token', ['resource' => 'https://graph.windows.net']);
+        foreach ($oldgraphtokens as $graphtoken) {
+            $graphtoken->resource = 'https://graph.microsoft.com';
+            $DB->update_record('auth_oidc_token', $graphtoken);
         }
 
-        upgrade_plugin_savepoint($result, 2020071503, 'auth', 'oidc');
+        $oidcresource = get_config('auth_oidc', 'oidcresource');
+        if ($oidcresource !== false && strpos($oidcresource, 'windows') !== false) {
+            set_config('oidcresource', 'https://graph.microsoft.com', 'auth_oidc');
+        }
+
+        upgrade_plugin_savepoint(true, 2020020301, 'auth', 'oidc');
+    }
+
+    if ($result && $oldversion < 2020071503) {
+        $localo365singlesignoffsetting = get_config('local_o365', 'single_sign_off');
+        if ($localo365singlesignoffsetting !== false) {
+            set_config('single_sign_off', true, 'auth_oidc');
+            unset_config('single_sign_off', 'local_o365');
+        }
+
+        upgrade_plugin_savepoint(true, 2020071503, 'auth', 'oidc');
     }
 
     if ($result && $oldversion < 2020110901) {
-        // Rename field resource on table auth_oidc_token to tokenresource.
-        $table = new xmldb_table('auth_oidc_token');
-        $field = new xmldb_field('resource', XMLDB_TYPE_CHAR, '127', null, XMLDB_NOTNULL, null, null, 'scope');
+        if ($dbman->field_exists('auth_oidc_token', 'resource')) {
+            // Rename field resource on table auth_oidc_token to tokenresource.
+            $table = new xmldb_table('auth_oidc_token');
 
-        // Launch rename field resource.
-        $dbman->rename_field($table, $field, 'tokenresource');
+            $field = new xmldb_field('resource', XMLDB_TYPE_CHAR, '127', null, XMLDB_NOTNULL, null, null, 'scope');
+
+            // Launch rename field resource.
+            $dbman->rename_field($table, $field, 'tokenresource');
+        }
 
         // Oidc savepoint reached.
         upgrade_plugin_savepoint(true, 2020110901, 'auth', 'oidc');
+    }
+
+    if ($oldversion < 2020110903) {
+        // Part 1: add index to auth_oidc_token table.
+        $table = new xmldb_table('auth_oidc_token');
+
+        // Define index userid (not unique) to be added to auth_oidc_token.
+        $useridindex = new xmldb_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+
+        // Conditionally launch add index userid.
+        if (!$dbman->index_exists($table, $useridindex)) {
+            $dbman->add_index($table, $useridindex);
+        }
+
+        // Define index username (not unique) to be added to auth_oidc_token.
+        $usernameindex = new xmldb_index('username', XMLDB_INDEX_NOTUNIQUE, ['username']);
+
+        // Conditionally launch add index username.
+        if (!$dbman->index_exists($table, $usernameindex)) {
+            $dbman->add_index($table, $usernameindex);
+        }
+
+        // Part 2: update Authorization and token end point URL.
+        $aadtenant = get_config('local_o365', 'aadtenant');
+
+        if ($aadtenant) {
+            $authorizationendpoint = get_config('auth_oidc', 'authendpoint');
+            if ($authorizationendpoint == 'https://login.microsoftonline.com/common/oauth2/authorize') {
+                $authorizationendpoint = str_replace('common', $aadtenant, $authorizationendpoint);
+                set_config('authendpoint', $authorizationendpoint, 'auth_oidc');
+            }
+
+            $tokenendpoint = get_config('auth_oidc', 'tokenendpoint');
+            if ($tokenendpoint == 'https://login.microsoftonline.com/common/oauth2/token') {
+                $tokenendpoint = str_replace('common', $aadtenant, $tokenendpoint);
+                set_config('tokenendpoint', $tokenendpoint, 'auth_oidc');
+            }
+        }
+
+        // Oidc savepoint reached.
+        upgrade_plugin_savepoint(true, 2020110903, 'auth', 'oidc');
     }
 
     return $result;

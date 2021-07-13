@@ -4,6 +4,18 @@ moodle-theme_boost_campus
 Changes
 -------
 
+### v3.10-r6
+
+* 2021-04-20 - Adjusted footer.mustache due to upstream changes in theme Boost core (MDL-70173).
+
+### v3.10-r5
+
+* 2021-04-14 - Bugfix: Help Icon content in the modal dialog versions sometimes inherited unwanted CSS layout - Credits to @danowar2k
+* 2021-04-14 - Improvement: Improve floating icons in information / hint banners
+* 2021-04-12 - Improvement: Modify the hint for unrestricted self enrolment in a way that it is more understandable if enrolment end dates are set or not.
+* 2021-04-11 - Fix Behat test for random login background image
+* 2021-03-14 - Fix Behat test for unrestricted self enrolment hint
+
 ### v3.10-r4
 
 * 2021-03-13 - Bugfix: Option to output the information banner without any particular Bootstrap color was broken on the login page.
